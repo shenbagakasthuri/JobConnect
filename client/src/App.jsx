@@ -1,122 +1,96 @@
-import React, { useEffect, useState } from 'react';
-import { checkHealth } from './services/api';
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import Navbar from './layouts/Navbar';
+import Footer from './layouts/Footer';
+import ProtectedRoute from './components/ProtectedRoute';
+
+import HomePage from './pages/HomePage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import DashboardPage from './pages/DashboardPage';
+import JobsPage from './pages/JobsPage';
+import JobDetailsPage from './pages/JobDetailsPage';
+import PostJobPage from './pages/PostJobPage';
+import MyJobsPage from './pages/MyJobsPage';
+import MyApplicationsPage from './pages/MyApplicationsPage';
+import JobApplicantsPage from './pages/JobApplicantsPage';
+
 import './styles/App.css';
 
 function App() {
-  const [health, setHealth] = useState({
-    loading: true,
-    data: null,
-    error: null,
-  });
-
-  useEffect(() => {
-    const fetchStatus = async () => {
-      const res = await checkHealth();
-      if (res.ok) {
-        setHealth({ loading: false, data: res.data, error: null });
-      } else {
-        setHealth({
-          loading: false,
-          data: null,
-          error: res.error || 'Could not connect to backend API',
-        });
-      }
-    };
-
-    fetchStatus();
-  }, []);
-
   return (
-    <div className="app-container">
-      <header className="navbar">
-        <div className="brand">
-          <span className="brand-title">JobConnect</span>
-          <span className="brand-tagline">Connecting talent with opportunities.</span>
+    <BrowserRouter>
+      <AuthProvider>
+        <div className="app-container">
+          <Navbar />
+
+          <main className="main-content">
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<HomePage />} />
+              <Route path="/jobs" element={<JobsPage />} />
+              <Route path="/jobs/:id" element={<JobDetailsPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+
+              {/* Protected User Dashboard */}
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <DashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Job Seeker Protected Routes */}
+              <Route
+                path="/my-applications"
+                element={
+                  <ProtectedRoute allowedRoles={['JOB_SEEKER', 'ADMIN']}>
+                    <MyApplicationsPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Employer-Only Protected Routes */}
+              <Route
+                path="/employer/post-job"
+                element={
+                  <ProtectedRoute allowedRoles={['EMPLOYER', 'ADMIN']}>
+                    <PostJobPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/employer/my-jobs"
+                element={
+                  <ProtectedRoute allowedRoles={['EMPLOYER', 'ADMIN']}>
+                    <MyJobsPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/employer/jobs/:jobId/applicants"
+                element={
+                  <ProtectedRoute allowedRoles={['EMPLOYER', 'ADMIN']}>
+                    <JobApplicantsPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </main>
+
+          <Footer />
         </div>
-        <span className="badge">Phase 1: Foundation Active</span>
-      </header>
-
-      <main className="main-content">
-        <section className="hero-card">
-          <h1 className="hero-title">Recruitment Platform Foundation</h1>
-          <p className="hero-subtitle">
-            Auspify Technologies Internship Advanced Project — Built with React.js, Node.js, Express, and MySQL.
-          </p>
-          <div className="badge-row">
-            <span className="badge">React 18 + Vite</span>
-            <span className="badge">Node.js + Express (ES Modules)</span>
-            <span className="badge">MySQL 8.0 (InnoDB)</span>
-            <span className="badge">JWT Ready</span>
-          </div>
-        </section>
-
-        <section className="grid-two">
-          <div className="card">
-            <div className="card-title">
-              <span>API Health Status</span>
-              <span
-                className={`status-pill ${
-                  health.loading
-                    ? 'status-checking'
-                    : health.data
-                    ? 'status-online'
-                    : 'status-checking'
-                }`}
-              >
-                {health.loading ? 'Checking...' : health.data ? 'Healthy (200)' : 'Offline'}
-              </span>
-            </div>
-            <ul className="detail-list">
-              <li className="detail-item">
-                <span className="detail-label">Endpoint:</span>
-                <span className="detail-value">GET /api/health</span>
-              </li>
-              <li className="detail-item">
-                <span className="detail-label">Server Timestamp:</span>
-                <span className="detail-value">
-                  {health.data?.timestamp ? new Date(health.data.timestamp).toLocaleTimeString() : 'N/A'}
-                </span>
-              </li>
-              <li className="detail-item">
-                <span className="detail-label">Service:</span>
-                <span className="detail-value">{health.data?.service || 'Connecting...'}</span>
-              </li>
-            </ul>
-          </div>
-
-          <div className="card">
-            <div className="card-title">
-              <span>Database Status</span>
-              <span
-                className={`status-pill ${
-                  health.data?.database?.connected ? 'status-online' : 'status-checking'
-                }`}
-              >
-                {health.data?.database?.connected ? 'Connected' : 'Pending'}
-              </span>
-            </div>
-            <ul className="detail-list">
-              <li className="detail-item">
-                <span className="detail-label">Database Name:</span>
-                <span className="detail-value">jobconnect_db</span>
-              </li>
-              <li className="detail-item">
-                <span className="detail-label">Tables Verified:</span>
-                <span className="detail-value">{health.data?.database?.tableCount ?? '...'} tables</span>
-              </li>
-              <li className="detail-item">
-                <span className="detail-label">Connection Pool:</span>
-                <span className="detail-value">mysql2 / 10 connections</span>
-              </li>
-            </ul>
-          </div>
-        </section>
-      </main>
-
-      <footer className="footer">
-        JobConnect &copy; {new Date().getFullYear()} Auspify Technologies Internship. All rights reserved.
-      </footer>
-    </div>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 

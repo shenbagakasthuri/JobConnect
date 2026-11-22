@@ -1,7 +1,21 @@
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 
-dotenv.config();
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const envPath = path.resolve(__dirname, '../../.env');
+
+const envConfig = dotenv.config({ path: envPath });
+const parsed = envConfig.parsed || {};
+
+const dbHost = parsed.DB_HOST || process.env.DB_HOST || '127.0.0.1';
+const dbPort = Number(parsed.DB_PORT || process.env.DB_PORT) || 3306;
+const dbUser = parsed.DB_USER || process.env.DB_USER || 'jobconnect';
+const dbPassword = parsed.DB_PASSWORD !== undefined ? parsed.DB_PASSWORD : (process.env.DB_PASSWORD || '');
+const dbName = parsed.DB_NAME || process.env.DB_NAME || 'jobconnect_db';
 
 /**
  * MySQL Connection Pool Configuration
@@ -9,13 +23,13 @@ dotenv.config();
  * and parameterized query execution to safeguard against SQL injection.
  */
 const pool = mysql.createPool({
-  host: process.env.DB_HOST || '127.0.0.1',
-  port: Number(process.env.DB_PORT) || 3306,
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'jobconnect_db',
+  host: dbHost,
+  port: dbPort,
+  user: dbUser,
+  password: dbPassword,
+  database: dbName,
   waitForConnections: true,
-  connectionLimit: Number(process.env.DB_CONNECTION_LIMIT) || 10,
+  connectionLimit: Number(parsed.DB_CONNECTION_LIMIT || process.env.DB_CONNECTION_LIMIT) || 10,
   queueLimit: 0,
   enableKeepAlive: true,
   keepAliveInitialDelay: 0,
